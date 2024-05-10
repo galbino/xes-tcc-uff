@@ -1,0 +1,44 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: xes-uff
+    container_name: xes-uff
+    ports:
+      - "8000:8080"
+    volumes:
+      - ./src:/app/src
+      - ./main.py:/app/main.py
+      - ./fixture.py:/app/fixture.py
+      - ./poetry.lock:/app/poetry.lock
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./migrations:/app/migrations
+      - ./tests:/app/tests
+    environment:
+      _CREDENTIALS: ${_CREDENTIALS:-service.json}
+      _PROJECT_ID: ${_PROJECT_ID:-rad-stt-dev}
+      _DATABASE_URI: postgresql+asyncpg://postgres:postgres@db:5432/postgres
+      _PUBSUB_TOPIC: ${_PUBSUB_TOPIC:-processor-queue}
+      _BUCKET_PATH: ${_BUCKET_PATH:-conversion-files}
+      _LOG_LEVEL: ${_LOG_LEVEL:-DEBUG}
+      _ORIGIN: ${_ORIGIN:-http://dev.localhost}
+      _ENV: ${_ENV:-local}
+      _EXPORT_TO: ${_EXPORT_TO:-console}
+      _SENDGRID_KEY: ${_SENDGRID_KEY}
+      _BASE_URL: ${_BASE_URL:-http://localhost:8080}
+      _SENDER_EMAIL: gustavo_albino@id.uff.br
+    command: make server
+
+  storage:
+    image: oittaa/gcp-storage-emulator:latest
+    command: start --host=storage --port=9023 --default-bucket=conversion-files
+    restart: unless-stopped
+    ports:
+      - 9023:9023
+    volumes:
+      - ./cloudstorage:/storage
+    profiles:
+      - storage
