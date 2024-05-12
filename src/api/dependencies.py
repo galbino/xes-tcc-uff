@@ -32,21 +32,39 @@ class GoogleModule(injector.Module):
     @injector.provider
     @injector.singleton
     def provide_cloud_storage(self, settings: Settings) -> ports.Storage:
-        """Provide the Cloud Storage."""
+        """
+        Provide the Cloud Storage.
+        """
         return google.CloudStorage(
             project_id=settings.get("project_id", ""),
             storage_path=settings.get("bucket_path", ""),
             creds_path=settings.get("credentials", ""),
         )
 
+    @injector.provider
+    @injector.singleton
+    def provide_pubsub(self, settings: Settings) -> ports.MessagePublisher:
+        """
+        Provide the GCP's Pubsub.
+        """
+        return google.MessagePublisher(
+            project_id=settings.get("project_id", ""),
+            creds_path=settings.get("gcp_bucket_credentials", ""),
+            topic=settings.get("pubsub_topic", ""),
+        )
+
 
 class UtilModule(injector.Module):
-    """Module for util packages."""
+    """
+    Module for util packages.
+    """
 
     @injector.provider
     @injector.singleton
     def provide_notification_handler(self, settings: Settings) -> ports.Notification:
-        """Provides the sendgrid notification handler."""
+        """
+        Provides the sendgrid notification handler.
+        """
         return sendgrid.Sendgrid(
             api_key=settings.get("sendgrid_key", ""),
             sender_email=settings.get("sender_email", ""),
@@ -54,7 +72,8 @@ class UtilModule(injector.Module):
 
 
 def create_container(mods: tuple[injector.Module] | None = None) -> injector.Injector:
-    """Create the dependency injection container.
+    """
+    Create the dependency injection container.
 
     :return: configured dependency injection container.
     """

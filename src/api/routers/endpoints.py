@@ -1,8 +1,12 @@
-"""Base router."""
+"""
+Base router.
+"""
 
+import base64
 import csv
 import io
 import logging
+import uuid
 from collections import defaultdict
 
 import fastapi
@@ -18,6 +22,7 @@ router = fastapi.APIRouter()
 
 logger = logging.getLogger(__name__)
 
+tasks = {}
 
 @router.get("/healthz")
 def healthz() -> fastapi.Response:
@@ -27,15 +32,54 @@ def healthz() -> fastapi.Response:
     return fastapi.Response(status_code=200, content="OK")
 
 
+@router.post("/signed")
+async def generate_signed_url(
+    body: schemas.GetSignedUrl = fastapi.Body(...),
+    storage: ports.Storage = fastapi_injector.Injected(ports.Storage),
+) -> dict[str, str]:
+    path = f"raw/{body.file_name}"
+    signed_url = await storage.generate_signed_url(path, body.mimetype)
+    return {
+        "url": signed_url,
+    }
+
+
 @router.post("/convert")
 async def convert(
-    storage: ports.Storage = fastapi_injector.Injected(ports.Storage),
+    publisher: ports.MessagePublisher = fastapi_injector.Injected(
+        ports.MessagePublisher
+    ),
     body: schemas.ConvertXES = fastapi.Body(...),
-) -> dict[str, str]:
+) -> schemas.ConvertXESResponse:
+    task_id = uuid.uuid4()
+    await publisher.publish(
+        schemas.ConvertAsyncTask(
+            task_id=task_id,
+            url=body.file,
+            email_address=body.email_address,
+            keys=body.keys,
+            delimiter=body.delimiter,
+        )
+    )
+    tasks[task_id] = {"status": "processing"}
+    return schemas.ConvertXESResponse(
+        task_id=task_id,
+        status="processing",
+    )
+
+
+@router.post("/_pubsub")
+async def async_convert(
+    pubsub_body: schemas.PubsubRequest = fastapi.Body(...),
+    storage: ports.Storage = fastapi_injector.Injected(ports.Storage),
+) -> fastapi.Response:
     """
     Convert the file to a different format.
     """
-    file_data = body.file
+    body = schemas.AsyncTaskRequest.parse_raw(
+        base64.b64decode(pubsub_body.message.data.decode("utf-8"))
+    )
+    file_data = body.url
     _, file_name = file_data.rsplit("/", 1)
     file_stripped = (
         file_data.replace("https://", "")
@@ -99,4 +143,5 @@ async def convert(
     url = await storage.generate_signed_url(
         upload_name, mimetype="application/xml+xes", method="GET"
     )
-    return {"url": url}
+    tasks[body.task_id] = {"status": "done", "url": url}
+    return fastapi.Response(status_code=200)
