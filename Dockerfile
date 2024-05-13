@@ -14,6 +14,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get -y upgrade && \
     apt-get install --no-install-recommends -y \
+        build-essential \
         curl
 
 RUN curl -sSL https://install.python-poetry.org | python -

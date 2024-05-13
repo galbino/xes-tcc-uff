@@ -49,7 +49,7 @@ class GoogleModule(injector.Module):
         """
         return google.MessagePublisher(
             project_id=settings.get("project_id", ""),
-            creds_path=settings.get("gcp_bucket_credentials", ""),
+            creds_path=settings.get("credentials", ""),
             topic=settings.get("pubsub_topic", ""),
         )
 

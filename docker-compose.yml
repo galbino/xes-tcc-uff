@@ -8,19 +8,15 @@ services:
     image: xes-uff
     container_name: xes-uff
     ports:
-      - "8000:8080"
+      - "8080:8080"
     volumes:
       - ./src:/app/src
       - ./main.py:/app/main.py
-      - ./fixture.py:/app/fixture.py
       - ./poetry.lock:/app/poetry.lock
       - ./pyproject.toml:/app/pyproject.toml
-      - ./migrations:/app/migrations
-      - ./tests:/app/tests
     environment:
       _CREDENTIALS: ${_CREDENTIALS:-service.json}
-      _PROJECT_ID: ${_PROJECT_ID:-rad-stt-dev}
-      _DATABASE_URI: postgresql+asyncpg://postgres:postgres@db:5432/postgres
+      _PROJECT_ID: ${_PROJECT_ID:-xes-tcc}
       _PUBSUB_TOPIC: ${_PUBSUB_TOPIC:-processor-queue}
       _BUCKET_PATH: ${_BUCKET_PATH:-conversion-files}
       _LOG_LEVEL: ${_LOG_LEVEL:-DEBUG}
@@ -30,6 +26,8 @@ services:
       _SENDGRID_KEY: ${_SENDGRID_KEY}
       _BASE_URL: ${_BASE_URL:-http://localhost:8080}
       _SENDER_EMAIL: gustavo_albino@id.uff.br
+      PUBSUB_EMULATOR_HOST: "${PUBSUB_EMULATOR_HOST}"
+      STORAGE_EMULATOR_HOST: ${STORAGE_EMULATOR_HOST}
     command: make server
 
   storage:
@@ -42,3 +40,22 @@ services:
       - ./cloudstorage:/storage
     profiles:
       - storage
+
+  pubsub:
+    image: us-east1-docker.pkg.dev/xes-tcc/pubsub-emulator/pubsub-emulator:1.0.1
+    platform: linux/amd64
+    ports:
+      - 8085:8085
+    environment:
+      PUBSUB_PROJECT_ID: ${_PROJECT_ID:-xes-tcc}
+      PUBSUB_CONFIG: |
+        [
+          {
+            "name": "processor-queue",
+            "subscriptions": [
+              {"id": "process-api", "endpoint": "http://host.docker.internal:8080/api/v1/_pubsub"}
+            ]
+          }
+        ]
+    profiles:
+    - pubsub

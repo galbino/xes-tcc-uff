@@ -7,6 +7,7 @@ import csv
 import io
 import logging
 import uuid
+import typing
 from collections import defaultdict
 
 import fastapi
@@ -22,7 +23,7 @@ router = fastapi.APIRouter()
 
 logger = logging.getLogger(__name__)
 
-tasks = {}
+tasks: dict[str, typing.Any] = {}
 
 @router.get("/healthz")
 def healthz() -> fastapi.Response:
@@ -30,6 +31,13 @@ def healthz() -> fastapi.Response:
     Health check to see if it's able to receive more transactions.
     """
     return fastapi.Response(status_code=200, content="OK")
+
+@router.get("/task/{task_id}")
+async def get_task_status(task_id: uuid.UUID) -> dict[str, str]:
+    task = tasks.get(task_id)
+    if task is None:
+        return {"status": "not_found"}
+    return task
 
 
 @router.post("/signed")
