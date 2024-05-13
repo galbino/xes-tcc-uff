@@ -3,13 +3,13 @@ Base router.
 """
 
 import base64
-import csv
 import io
 import logging
 import uuid
-import typing
 from collections import defaultdict
 
+import aiocsv
+import aiofiles
 import fastapi
 import fastapi_injector
 from dateutil import parser
@@ -23,7 +23,6 @@ router = fastapi.APIRouter()
 
 logger = logging.getLogger(__name__)
 
-tasks: dict[str, typing.Any] = {}
 
 @router.get("/healthz")
 def healthz() -> fastapi.Response:
@@ -32,12 +31,18 @@ def healthz() -> fastapi.Response:
     """
     return fastapi.Response(status_code=200, content="OK")
 
-@router.get("/task/{task_id}")
-async def get_task_status(task_id: uuid.UUID) -> dict[str, str]:
+
+@router.get("/tasks/{task_id}")
+async def get_task_status(
+    task_id: uuid.UUID,
+    tasks: ports.MemoryStorage = fastapi_injector.Injected(ports.MemoryStorage),
+) -> fastapi.Response:
     task = tasks.get(task_id)
     if task is None:
-        return {"status": "not_found"}
-    return task
+        return fastapi.responses.JSONResponse(
+            status_code=404, content={"status": "not_found"}
+        )
+    return fastapi.responses.JSONResponse(status_code=200, content=task)
 
 
 @router.post("/signed")
@@ -57,6 +62,7 @@ async def convert(
     publisher: ports.MessagePublisher = fastapi_injector.Injected(
         ports.MessagePublisher
     ),
+    tasks: ports.MemoryStorage = fastapi_injector.Injected(ports.MemoryStorage),
     body: schemas.ConvertXES = fastapi.Body(...),
 ) -> schemas.ConvertXESResponse:
     task_id = uuid.uuid4()
@@ -69,7 +75,7 @@ async def convert(
             delimiter=body.delimiter,
         )
     )
-    tasks[task_id] = {"status": "processing"}
+    tasks.set(task_id, {"status": "processing"})
     return schemas.ConvertXESResponse(
         task_id=task_id,
         status="processing",
@@ -79,6 +85,7 @@ async def convert(
 @router.post("/_pubsub")
 async def async_convert(
     pubsub_body: schemas.PubsubRequest = fastapi.Body(...),
+    tasks: ports.MemoryStorage = fastapi_injector.Injected(ports.MemoryStorage),
     storage: ports.Storage = fastapi_injector.Injected(ports.Storage),
 ) -> fastapi.Response:
     """
@@ -109,9 +116,9 @@ async def async_convert(
     ]
     mapping = body.keys
     case_column = mapping.pop("concept:id")
-    with open(file_path, encoding="latin1") as f:
-        reader = csv.DictReader(f, delimiter=body.delimiter)
-        for row in reader:
+    async with aiofiles.open(file_path, encoding="utf-8") as f:
+        reader = aiocsv.AsyncDictReader(f, delimiter=body.delimiter)
+        async for row in reader:
             event_data = {}
             case_id = row.pop(case_column)
             for key, to_key in mapping.items():
@@ -151,5 +158,5 @@ async def async_convert(
     url = await storage.generate_signed_url(
         upload_name, mimetype="application/xml+xes", method="GET"
     )
-    tasks[body.task_id] = {"status": "done", "url": url}
+    tasks.set(body.task_id, {"status": "done", "url": url})
     return fastapi.Response(status_code=200)

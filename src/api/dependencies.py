@@ -6,7 +6,7 @@ import os
 import injector
 
 from . import ports
-from .adapters import google, sendgrid
+from .adapters import google, memory, sendgrid
 from .typings import Settings
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,20 @@ class UtilModule(injector.Module):
         )
 
 
+class MemoryModule(injector.Module):
+    """
+    Module for util packages.
+    """
+
+    @injector.provider
+    @injector.singleton
+    def provide_memory_storage(self) -> ports.MemoryStorage:
+        """
+        Provides the sendgrid notification handler.
+        """
+        return memory.MemoryStorage()
+
+
 def create_container(mods: tuple[injector.Module] | None = None) -> injector.Injector:
     """
     Create the dependency injection container.
@@ -81,6 +95,7 @@ def create_container(mods: tuple[injector.Module] | None = None) -> injector.Inj
         GoogleModule(),
         SettingsModule(),
         UtilModule(),
+        MemoryModule(),
     )
 
     return injector.Injector(modules)
