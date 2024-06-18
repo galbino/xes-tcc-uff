@@ -38,6 +38,7 @@ class GetSignedUrl(pydantic.BaseModel):
 
     file_name: str
     mimetype: str
+    is_handshake: bool = False
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

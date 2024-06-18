@@ -66,6 +66,7 @@ class CloudStorage(ports.Storage):
                 expiration=datetime.timedelta(hours=1),
                 version="v4",
                 content_type=mimetype if method != "GET" else None,
+                headers={"x-goog-resumable": "start"} if method == "POST" else None,
             )
         )
         return response

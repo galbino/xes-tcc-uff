@@ -51,7 +51,9 @@ async def generate_signed_url(
     storage: ports.Storage = fastapi_injector.Injected(ports.Storage),
 ) -> dict[str, str]:
     path = f"raw/{body.file_name}"
-    signed_url = await storage.generate_signed_url(path, body.mimetype)
+    signed_url = await storage.generate_signed_url(
+        path, body.mimetype, method="POST" if body.is_handshake else "PUT"
+    )
     return {
         "url": signed_url,
     }
