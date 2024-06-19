@@ -37,6 +37,7 @@ WORKDIR /app
 
 COPY --from=builder /app /app
 
-ENV GUNICORN_WORKERS=1
+ENV GUNICORN_WORKERS=1 \
+    PORT=8080
 
 CMD gunicorn --bind :$PORT --workers $GUNICORN_WORKERS --threads 1 --timeout 0 --worker-class=uvicorn.workers.UvicornWorker --worker-tmp-dir=/dev/shm api.asgi:app

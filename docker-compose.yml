@@ -16,6 +16,7 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
     environment:
       _CREDENTIALS: ${_CREDENTIALS:-service.json}
+      _GCP_STORAGE_CREDENTIALS: ${_GCP_STORAGE_CREDENTIALS:-service.json}
       _PROJECT_ID: ${_PROJECT_ID:-xes-tcc}
       _PUBSUB_TOPIC: ${_PUBSUB_TOPIC:-processor-queue}
       _BUCKET_PATH: ${_BUCKET_PATH:-conversion-files}
@@ -25,6 +26,7 @@ services:
       _EXPORT_TO: ${_EXPORT_TO:-console}
       _SENDGRID_KEY: ${_SENDGRID_KEY}
       _BASE_URL: ${_BASE_URL:-http://localhost:8080}
+      _TEMPLATE: ${_TEMPLATE:-d-a7ba6b78f99d4968b0d41547fca979cb}
       _SENDER_EMAIL: gustavo_albino@id.uff.br
       PUBSUB_EMULATOR_HOST: "${PUBSUB_EMULATOR_HOST}"
       STORAGE_EMULATOR_HOST: ${STORAGE_EMULATOR_HOST}

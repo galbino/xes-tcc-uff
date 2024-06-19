@@ -14,7 +14,7 @@ import fastapi
 import fastapi_injector
 from dateutil import parser
 
-from api import ports
+from api import ports, typings
 from api.domain import xes
 
 from . import schemas
@@ -87,6 +87,8 @@ async def convert(
 @router.post("/_pubsub")
 async def async_convert(
     pubsub_body: schemas.PubsubRequest = fastapi.Body(...),
+    settings: typings.Settings = fastapi_injector.Injected(typings.Settings),
+    notification: ports.Notification = fastapi_injector.Injected(ports.Notification),
     tasks: ports.MemoryStorage = fastapi_injector.Injected(ports.MemoryStorage),
     storage: ports.Storage = fastapi_injector.Injected(ports.Storage),
 ) -> fastapi.Response:
@@ -161,4 +163,5 @@ async def async_convert(
         upload_name, mimetype="application/xml+xes", method="GET"
     )
     tasks.set(body.task_id, {"status": "done", "url": url})
+    notification.send(body.email_address, settings.get("template"), url=url)
     return fastapi.Response(status_code=200)

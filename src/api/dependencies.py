@@ -38,7 +38,7 @@ class GoogleModule(injector.Module):
         return google.CloudStorage(
             project_id=settings.get("project_id", ""),
             storage_path=settings.get("bucket_path", ""),
-            creds_path=settings.get("credentials", ""),
+            creds_path=settings.get("gcp_storage_credentials", ""),
         )
 
     @injector.provider

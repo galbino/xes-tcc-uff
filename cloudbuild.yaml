@@ -1,0 +1,47 @@
+steps:
+  # Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    id: Build container image
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        docker build \
+          -t us-east1-docker.pkg.dev/$PROJECT_ID/xes/backend:$SHORT_SHA \
+          -f Dockerfile \
+          .
+  
+  # Push the container image to Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: Push container image
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        docker push us-east1-docker.pkg.dev/$PROJECT_ID/xes/backend:$SHORT_SHA
+
+  # Deploy container image to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: Deploy container image
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gcloud run deploy backend \
+          --project=$PROJECT_ID \
+          --image us-east1-docker.pkg.dev/$PROJECT_ID/xes/backend:$SHORT_SHA \
+          --region us-east1 \
+          --port 8080 \
+          --set-secrets=_SENDGRID_KEY=sendgrid_key:latest,/secrets/api/gcs_sa_key=storage_credentials:latest \
+          --set-env-vars=_GCP_STORAGE_CREDENTIALS=/secrets/api/gcs_sa_key,_PROJECT_ID=$PROJECT_ID,_BUCKET_PATH=${_BUCKET_PATH},_LOG_LEVEL=INFO,_ENV=prd,_EXPORT_TO=google,_BASE_URL=${_BASE_URL},_TEMPLATE=${_TEMPLATE},_SENDER_EMAIL=gustavo_albino@id.uff.br,_FRONT_BASE_URL=${_FRONT_BASE_URL} \
+          --allow-unauthenticated
+images:
+  - "us-east1-docker.pkg.dev/$PROJECT_ID/xes/backend:$SHORT_SHA"
+
+substitutions:
+    _BUCKET_PATH: conversion-files
+    _BASE_URL: https://backend-fxw6u34r5q-ue.a.run.app # default value
+    _TEMPLATE: d-f499fcd44d814eed80ffbf10d8a277ee
+    _FRONT_BASE_URL: https://frontend-fxw6u34r5q-ue.a.run.app
+options:
+  logging: CLOUD_LOGGING_ONLY
