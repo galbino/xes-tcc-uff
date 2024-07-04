@@ -163,5 +163,5 @@ async def async_convert(
         upload_name, mimetype="application/xml+xes", method="GET"
     )
     tasks.set(body.task_id, {"status": "done", "url": url})
-    notification.send(body.email_address, settings.get("template"), url=url)
+    await notification.send(body.email_address, settings.get("template", ""), url=url)
     return fastapi.Response(status_code=200)
