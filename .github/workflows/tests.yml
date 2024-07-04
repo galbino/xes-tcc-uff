@@ -1,0 +1,70 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+        
+    - name: Setup Poetry
+      uses: Gr1N/setup-poetry@v9
+      with:
+        poetry-version: 1.8.2
+        
+    - name: configure poetry
+      run: poetry config virtualenvs.in-project true
+      
+    - name: set up cache
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ hashFiles('**/poetry.lock') }}
+      
+    - name: ensure cache is healthy
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+      if: steps.cache.outputs.cache-hit == 'true'
+      
+    - name: install dependencies
+      run: poetry install
+      if: steps.cache.outputs.cache-hit != 'true'
+
+    - name: Load mypy cache
+      uses: actions/cache/restore@v4
+      with:
+        path: .mypy_cache
+        key: mypy-${{ env.pythonLocation }}-${{ github.sha }}
+        restore-keys: |
+          mypy-${{ env.pythonLocation }}-
+
+    - name: Load ruff cache
+      uses: actions/cache/restore@v4
+      with:
+        path: .ruff_cache
+        key: ruff-${{ env.pythonLocation }}-${{ github.sha }}
+        restore-keys: |
+          ruff-${{ env.pythonLocation }}-
+
+    - name: Running linter
+      id: linter
+      run: make lint
+
+    - name: Cache ruff
+      if: ${{ always() && (steps.linter.outcome == 'success' || steps.linter.outcome == 'failure') }}
+      uses: actions/cache/save@v4
+      with:
+        path: .ruff_cache
+        key: ruff-${{ env.pythonLocation }}-${{ github.sha }}
+
+    - name: Cache mypy
+      if: ${{ always() && (steps.linter.outcome == 'success' || steps.linter.outcome == 'failure') }}
+      uses: actions/cache/save@v4
+      with:
+        path: .mypy_cache
+        key: mypy-${{ env.pythonLocation }}-${{ github.sha }}
