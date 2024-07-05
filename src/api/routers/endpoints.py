@@ -138,7 +138,9 @@ async def async_convert(
         event: dict[str, str]
         for event in traces[trace_id]:
             e = xes.Event()
-            date = parser.parse(event.pop("time:timestamp"))
+            if not (popped_date := event.pop("time:timestamp")):
+                continue
+            date = parser.parse(popped_date)
             e.attributes = [
                 xes.Attribute(
                     type="string", key="concept:name", value=event.pop("concept:name")
