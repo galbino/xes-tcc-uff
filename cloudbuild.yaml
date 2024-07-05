@@ -41,7 +41,7 @@ images:
 substitutions:
     _BUCKET_PATH: conversion-files
     _BASE_URL: https://backend-hdwhupxgjq-ue.a.run.app # default value
-    _TEMPLATE: d-a7ba6b78f99d4968b0d41547fca979cb
+    _TEMPLATE: d-9a1b5599093643b1bbea9e2d2ac10170
     _FRONT_BASE_URL: https://frontend-hdwhupxgjq-ue.a.run.app
 options:
   logging: CLOUD_LOGGING_ONLY
