@@ -63,7 +63,7 @@ class CloudStorage(ports.Storage):
             functools.partial(
                 blob.generate_signed_url,
                 method=method,
-                expiration=datetime.timedelta(hours=1),
+                expiration=datetime.timedelta(days=3),
                 version="v4",
                 content_type=mimetype if method != "GET" else None,
                 headers={"x-goog-resumable": "start"} if method == "POST" else None,

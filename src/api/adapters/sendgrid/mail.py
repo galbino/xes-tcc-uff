@@ -20,6 +20,7 @@ class Sendgrid(ports.Notification):
         async with aiohttp.ClientSession() as session:
             body = {
                 "from": {"email": self.sender_email},
+                "subject": "Arquivo XES convertido",
                 "personalizations": [
                     {
                         "to": [{"email": email}],
