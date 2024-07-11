@@ -115,7 +115,7 @@ async def async_convert(
     xes_tracker.classifiers = [
         xes.Classifier(name="Event Name", keys="concept:name"),
     ]
-    xes_tracker.add_global_event_attribute(
+    xes_tracker.add_global_trace_attributes(
         xes.Attribute(type="string", key="concept:name", value="")
     )
     mapping = body.keys
@@ -141,13 +141,15 @@ async def async_convert(
             if not (popped_date := event.pop("time:timestamp")):
                 continue
             date = parser.parse(popped_date)
-            date = date.replace(tzinfo=datetime.timezone.utc)
+            date = date.replace(tzinfo=datetime.UTC)
             e.attributes = [
                 xes.Attribute(
                     type="string", key="concept:name", value=event.pop("concept:name")
                 ),
                 xes.Attribute(
-                    type="date", key="time:timestamp", value=date.isoformat(timespec="milliseconds")
+                    type="date",
+                    key="time:timestamp",
+                    value=date.isoformat(timespec="milliseconds"),
                 ),
                 *[
                     xes.Attribute(type="string", key=k, value=v)
@@ -156,11 +158,13 @@ async def async_convert(
             ]
             t.add_event(e)
         xes_tracker.add_trace(t)
-    for attr in t.attributes:
+    for attr in e.attributes:
         val = ""
         if attr.type == "date":
             val = "1970-01-01T00:00:00.000+00:00"
-        xes_tracker.add_global_trace_attributes(xes.Attribute(type=attr.type, key=attr.key, value=val))
+        xes_tracker.add_global_event_attribute(
+            xes.Attribute(type=attr.type, key=attr.key, value=val)
+        )
     with io.BytesIO() as xes_file:
         xes_file.write(str(xes_tracker).encode("utf-8"))
         upload_name = f"{file_name.rsplit('.')[0]}.xes"

@@ -141,8 +141,8 @@ class XES:
         self.traces: list[Trace] = []
         self.extensions: list[Extension] = []
         self.classifiers: list[Classifier] = []
-        self.global_event_attributes: list[Event] = []
-        self.global_trace_attributes: list[Trace] = []
+        self.global_event_attributes: list[Attribute] = []
+        self.global_trace_attributes: list[Attribute] = []
         self.use_default_extensions = True
 
     def add_global_event_attribute(self, attr: Attribute) -> None:
@@ -195,14 +195,14 @@ class XES:
         if global_trace := self.global_trace_attributes:
             trace_element = ET.SubElement(self.log, "global")
             trace_element.set("scope", "trace")
-            for trace in global_trace:
-                trace_element.append(trace.xml)
+            for trace_attr in global_trace:
+                trace_element.append(trace_attr.xml)
 
         if global_events := self.global_event_attributes:
             event_element = ET.SubElement(self.log, "global")
             event_element.set("scope", "event")
-            for evnt in global_events:
-                event_element.append(evnt.xml)
+            for event_attr in global_events:
+                event_element.append(event_attr.xml)
 
         for classifier in self.classifiers:
             self.log.append(classifier.xml)
