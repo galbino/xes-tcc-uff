@@ -19,12 +19,13 @@ class Sendgrid(ports.Notification):
         """Sends the notification."""
         async with aiohttp.ClientSession() as session:
             body = {
-                "from": {"email": self.sender_email},
+                "from": {"email": self.sender_email, "name": "XES Converter Tool"},
                 "subject": "Arquivo XES convertido",
                 "personalizations": [
                     {
                         "to": [{"email": email}],
                         "dynamic_template_data": kwargs,
+                        "subject": "Arquivo XES convertido",
                     }
                 ],
                 "template_id": template_file,
