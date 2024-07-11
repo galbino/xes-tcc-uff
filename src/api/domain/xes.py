@@ -134,9 +134,8 @@ class XES:
 
     def __init__(self) -> None:
         self.log = ET.Element("log")
-        self.log.set("xes.version", "1.0")
-        self.log.set("xes.features", "nested-attributes")
-        self.log.set("openxes.version", "1.0RC7")
+        self.log.set("xes.version", "2.0")
+        self.log.set("xes.features", "arbitraty-depth")
 
         self.attributes: list[Attribute] = []
         self.traces: list[Trace] = []
@@ -146,10 +145,10 @@ class XES:
         self.global_trace_attributes: list[Trace] = []
         self.use_default_extensions = True
 
-    def add_global_event_attribute(self, attr: Event) -> None:
+    def add_global_event_attribute(self, attr: Attribute) -> None:
         self.global_event_attributes.append(attr)
 
-    def add_global_trace_attributes(self, attr: Trace) -> None:
+    def add_global_trace_attributes(self, attr: Attribute) -> None:
         self.global_trace_attributes.append(attr)
 
     def add_attribute(self, attr: Attribute) -> None:
